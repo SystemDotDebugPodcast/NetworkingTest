@@ -1,0 +1,80 @@
+<apex:page controller="NetworkingTestRemote">
+    
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css" />
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+        <apex:includeScript value="{!$Resource.NetworkingTest}"/>
+    </head>
+    
+    <script type="text/javascript">
+    
+        Visualforce.remoting.timeout = 120000; // milliseconds
+        
+        var response = '';
+        var responseObj = {};
+        
+        var constants = {
+            useVanillaJS: true
+        }
+        
+        function insertStringIntoTextAreaUsingVanillaJS(id, string) {
+            var textarea = document.getElementById(id);
+            textarea.innerText = string;
+        }
+        
+        function insertStringIntoTextAreaUsingJQuery(id, string) {
+            var textarea = $('#'+id);
+            textarea.text(string);
+        }
+        
+        function insertStringIntoTextArea(id, string) {
+            if(constants.useVanillaJS) {
+                insertStringIntoTextAreaUsingVanillaJS(id, string);
+            } else {
+                insertStringIntoTextAreaUsingJQuery(id, string);
+            }
+        }
+        
+        function formatDataForTextArea(data) {
+            return data.replace(/,/ig, ',\r\n\t').replace(/{/g, '{\r\n\t');
+        }
+        
+        function deepCopy(obj) {
+            return JSON.parse(JSON.stringify(obj));
+        } 
+        
+        function performApexRemotingCall() {
+            Visualforce.remoting.Manager.invokeAction(
+                '{!$RemoteAction.NetworkingTestRemote.performRemoteCallToAPI}', 
+                handleRemotingCallResponse
+            );
+        }
+
+        function handleRemotingCallResponse(result, event) {
+            console.dir(result);
+            var newResult = deepCopy(result);
+            insertStringIntoTextArea('ajaxresponse', JSON.stringify(newResult, null, 2));
+        }
+        
+        function performApexRemotingCallWithAnonFunc() {
+            Visualforce.remoting.Manager.invokeAction(
+                '{!$RemoteAction.NetworkingTestRemote.performRemoteCallToAPI}', 
+                (result, event) => {
+                    console.dir(result);
+                    var newResult = deepCopy(result);
+                    insertStringIntoTextArea('ajaxresponse', JSON.stringify(newResult, null, 2));
+                }
+            );
+        }
+    </script>
+
+    <body>
+        <textarea rows="18" cols="60" id="ajaxresponse">Response will be here...</textarea>
+        <br />
+        <!--<button onclick="insertStringIntoTextArea('ajaxresponse','some text here');">Ajax Request to API</button>-->
+        <button onclick="performCallToAPI();">Ajax Request to API</button>
+        <button onclick="performCallToAPI();">Ajax Request to API with Anon</button>
+    </body>
+
+</apex:page>
